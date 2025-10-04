@@ -5,6 +5,7 @@ import { ChatMessageHistory } from "@langchain/community/stores/message/in_memor
 import { ConversationSummaryMemory } from "langchain/memory";
 import { LLMChain } from "langchain/chains";
 import { PromptTemplate } from "@langchain/core/prompts";
+import Conversation from "./../src/models/ConversationModel";
 
 dotenv.config();
 
@@ -40,10 +41,25 @@ async function modelCall(input) {
     Human: {input}
     AI:`);
 
+  const memoryVars = await memory.loadMemoryVariables({});
+  const summary = memoryVars?.chat_history || "No summary available";
   
   const chain = new LLMChain({ llm: chatModel, prompt, memory });
 
   const res1 = await chain.call({ input });
+
+  //save in MongoDB
+  try {
+    await Conversation.create({
+      summary,
+      input,
+      output,
+      model: "emergency_model",
+    });
+    console.log("Conversation saved successfully!");
+  } catch (err) {
+    console.error("Error saving conversation:", err);
+  }
 
   return res1.text ;
 }
