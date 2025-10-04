@@ -6,6 +6,7 @@ import { ConversationSummaryMemory } from "langchain/memory";
 import { LLMChain } from "langchain/chains";
 import { PromptTemplate } from "@langchain/core/prompts";
 import Medication from "../src/models/medicineModel";
+import Conversation from "./../src/models/ConversationModel";
 
 dotenv.config();
 
@@ -23,8 +24,11 @@ const memory = new ConversationSummaryMemory({
 });
 
 //call the data from the database and add to the meory element
+let pastData;
+let userData;
 try{
-  const userData = await Medication.find().limit(15);
+  userData = await Medication.find().limit(15);
+  pastData = await Conversation.find().limit(2);
   console.log(userData);
 }catch(err){
   console.log("Error in featching the data...")
@@ -34,6 +38,10 @@ try{
 await memory.saveContext(
   { input: "What medications are available in the database?" },
   { output: `Available medications:\n${userData}` }
+);
+await memory.saveContext(
+  { input: "What is the past chat?" },
+  { output: `Past Chat:\n${JSON.stringify(pastData, null, 2)}` }
 );
 
 // Verify memory content
@@ -73,10 +81,26 @@ const modelCall = async (input) => {
       {chat_history}
       Human: {input}
       AI:`);
+
+  const memoryVars = await memory.loadMemoryVariables({});
+  const summary = memoryVars?.chat_history || "No summary available";
    
   const chain = new LLMChain({ llm: chatModel, prompt, memory });
    
   const res1 = await chain.call({ input });
+
+  //save in MongoDB
+  try {
+    await Conversation.create({
+      summary,
+      input,
+      output: res1.text,
+      model: "personal_health_model",
+    });
+    console.log("Conversation saved successfully!");
+  } catch (err) {
+    console.error("Error saving conversation:", err);
+  }
    
   return res1.text ;
 }
