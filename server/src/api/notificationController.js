@@ -1,5 +1,5 @@
-// controllers/notificationController.js
-import Medication from "../models/medicineModel.js"; // your mongoose model
+import Medication from "../models/medicineModel.js"; 
+import Notification from "../models/todayNotifications.js"; 
 import notifier from "node-notifier";
 
 // Helper: convert HH:mm string to Date today
@@ -34,22 +34,40 @@ function sendNotification(title, body) {
 // Main scheduler
 export default async function startNotificationScheduler(user) {
   console.log("📅 Starting daily medication notification scheduler...");
+  let userId = null;
 
-  console.log("User:id", user?.user.id); 
-  console.log("user",user)  
-const Id = user.user.id.toString();  
+  if (!user) {
+    console.warn("startNotificationScheduler: missing user argument");
+  } else if (typeof user === "string") {
+    userId = user;
+  } else if (user.id) {
+    userId = String(user.id);
+  } else if (user.user && user.user.id) {
+    userId = String(user.user.id);
+  }
+
+  if (!userId) {
+    console.warn("startNotificationScheduler: Missing or invalid user");
+    return;
+  }
+
+  console.log("User:id", userId);
+  console.log("user", user);
+
   try {
     const today = new Date();
     const todayDay = today.toLocaleString("en-US", { weekday: "long" }); // e.g., "Monday"
+    const todayDate = today.toISOString().split("T")[0]; // e.g., "2025-10-04"
     console.log("Today is:", todayDay);
 
     // Fetch medicines for the user and for today
-    const todaysMeds = await Medication.find();
-     const meds = await Medication.find({ userId: Id ,
+    const todaysMeds = await Medication.find({
+      userId: userId,
       dosageDays: { $in: [todayDay] },
-     });
-    console.log("todays med",todaysMeds)
-    console.log("meds",meds)
+    });
+
+    console.log("todays med", todaysMeds);
+
     // Sort by time ascending
     todaysMeds.sort((a, b) => {
       const timeA = getTimeForToday(a.dosageTimes[0].time); // assuming first time for simplicity
@@ -59,12 +77,31 @@ const Id = user.user.id.toString();
 
     // Schedule notifications for each medicine
     todaysMeds.forEach((med) => {
-      med.dosageTimes.forEach((dose) => {
+      med.dosageTimes.forEach(async (dose) => {
         const medTime = getTimeForToday(dose.time);
 
-        // Before
+        // BEFORE reminder
         const beforeMs = medTime.getTime() - parseDuration(dose.remindBefore);
         if (beforeMs > Date.now()) {
+          // 💾 Save to DB
+          await Notification.findOneAndUpdate(
+            { userId, date: todayDate },
+            {
+              $setOnInsert: { dayName: todayDay },
+              $push: {
+                notifications: {
+                  title: "Medicine Reminder ⏰",
+                  message: `Take ${med.pillName} in ${dose.remindBefore}`,
+                  type: "before",
+                  medicineId: med._id,
+                  medicineName: med.pillName,
+                  time: new Date(beforeMs),
+                },
+              },
+            },
+            { upsert: true, new: true }
+          );
+
           setTimeout(() => {
             sendNotification(
               "Medicine Reminder ⏰",
@@ -73,8 +110,26 @@ const Id = user.user.id.toString();
           }, beforeMs - Date.now());
         }
 
-        // On-time
+        // ON-TIME reminder
         if (medTime.getTime() > Date.now()) {
+          await Notification.findOneAndUpdate(
+            { userId, date: todayDate },
+            {
+              $setOnInsert: { dayName: todayDay },
+              $push: {
+                notifications: {
+                  title: "Time to Take Medicine 💊",
+                  message: `Take ${med.pillName} now`,
+                  type: "onTime",
+                  medicineId: med._id,
+                  medicineName: med.pillName,
+                  time: medTime,
+                },
+              },
+            },
+            { upsert: true, new: true }
+          );
+
           setTimeout(() => {
             sendNotification(
               "Time to Take Medicine 💊",
@@ -83,9 +138,27 @@ const Id = user.user.id.toString();
           }, medTime.getTime() - Date.now());
         }
 
-        // After
+        // AFTER reminder
         const afterMs = medTime.getTime() + parseDuration(dose.remindAfter);
         if (afterMs > Date.now()) {
+          await Notification.findOneAndUpdate(
+            { userId, date: todayDate },
+            {
+              $setOnInsert: { dayName: todayDay },
+              $push: {
+                notifications: {
+                  title: "Missed Dose ❗",
+                  message: `Did you forget ${med.pillName}?`,
+                  type: "after",
+                  medicineId: med._id,
+                  medicineName: med.pillName,
+                  time: new Date(afterMs),
+                },
+              },
+            },
+            { upsert: true, new: true }
+          );
+
           setTimeout(() => {
             sendNotification(
               "Missed Dose ❗",
@@ -97,8 +170,24 @@ const Id = user.user.id.toString();
     });
 
     // 🔹 Dummy test notification after 10 seconds
-    setTimeout(() => {
+    setTimeout(async () => {
       sendNotification("🔔 Test Notification", "This is a dummy test alert!");
+
+      await Notification.findOneAndUpdate(
+        { userId, date: todayDate },
+        {
+          $setOnInsert: { dayName: todayDay },
+          $push: {
+            notifications: {
+              title: "🔔 Test Notification",
+              message: "This is a dummy test alert!",
+              type: "test",
+              time: new Date(),
+            },
+          },
+        },
+        { upsert: true, new: true }
+      );
     }, 10 * 1000);
 
   } catch (err) {
