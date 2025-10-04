@@ -1,5 +1,5 @@
-import Medication from "../models/medicineModel.js"; 
-import Notification from "../models/todayNotifications.js"; 
+import Medication from "../models/medicineModel.js"; // your mongoose model
+import Notification from "../models/todayNotifications.js"; // new model
 import notifier from "node-notifier";
 
 // Helper: convert HH:mm string to Date today
@@ -31,28 +31,15 @@ function sendNotification(title, body) {
   console.log(`[NOTIFY] ${title}: ${body}`);
 }
 
+
+
 // Main scheduler
 export default async function startNotificationScheduler(user) {
   console.log("📅 Starting daily medication notification scheduler...");
-  let userId = null;
+  console.log("User:id", user?.user.id); 
+  console.log("user",user)  
+  const userId = user.user.id.toString(); 
 
-  if (!user) {
-    console.warn("startNotificationScheduler: missing user argument");
-  } else if (typeof user === "string") {
-    userId = user;
-  } else if (user.id) {
-    userId = String(user.id);
-  } else if (user.user && user.user.id) {
-    userId = String(user.user.id);
-  }
-
-  if (!userId) {
-    console.warn("startNotificationScheduler: Missing or invalid user");
-    return;
-  }
-
-  console.log("User:id", userId);
-  console.log("user", user);
 
   try {
     const today = new Date();
@@ -192,5 +179,42 @@ export default async function startNotificationScheduler(user) {
 
   } catch (err) {
     console.error("Error scheduling notifications:", err);
+  }
+}
+
+// Retrieve today's notification messages for a given userId
+export async function getTodaysNotifications(userOrId) {
+  try {
+    // normalize input to userId string
+    let userId = null;
+    if (!userOrId) return [];
+    if (typeof userOrId === 'string') userId = userOrId;
+    else if (userOrId.id) userId = String(userOrId.id);
+    else if (userOrId.user && userOrId.user.id) userId = String(userOrId.user.id);
+    if (!userId) return [];
+
+    const today = new Date();
+    const todayDate = today.toISOString().split('T')[0];
+
+    const doc = await Notification.findOne({ userId, date: todayDate }).lean();
+    if (!doc) return [];
+    // return the notifications array (each has title, message, time, etc.)
+    return doc.notifications || [];
+  } catch (err) {
+    console.error('Error in getTodaysNotifications:', err);
+    return [];
+  }
+}
+
+// Express handler: expects { localuser } or { userId } in req.body
+export async function getTodaysNotificationsHandler(req, res) {
+  try {
+    console.log('getTodaysNotificationsHandler body:', JSON.stringify(req.body));
+    const { localuser, userId } = req.body || {};
+    const data = await getTodaysNotifications(localuser || userId);
+    return res.status(200).json({ success: true, message: 'Today notifications fetched', data });
+  } catch (err) {
+    console.error('Error in getTodaysNotificationsHandler:', err);
+    return res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 }
