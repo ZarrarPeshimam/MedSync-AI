@@ -36,9 +36,19 @@ function sendNotification(title, body) {
 // Main scheduler
 export default async function startNotificationScheduler(user) {
   console.log("📅 Starting daily medication notification scheduler...");
-  console.log("User:id", user?.user.id); 
-  console.log("user",user)  
-  const userId = user.user.id.toString(); 
+  let userId;
+if (user?.user?.id) {
+  // if called from login (wrapped object)
+  userId = user.user.id.toString();
+} else if (user?._id) {
+  // if called from signup (Mongoose document)
+  userId = user._id.toString();
+} else {
+  console.error("Invalid user object passed to scheduler:", user);
+  return; // exit if user is invalid
+}
+
+console.log("User id:", userId);
 
 
   try {
