@@ -62,9 +62,8 @@ export default function LandingPage() {
         return;
       }
       
-      alert("Account created successfully! Please login.");
-      setIsLogin(true);
-      setForm({ name: "", email: "", password: "" });
+      alert("Account created successfully! Please complete your health profile.");
+      navigate("/health");
     } catch (error) {
       alert("Signup failed: " + error.message);
     }
