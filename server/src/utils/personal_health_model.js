@@ -40,7 +40,7 @@ export default async function personalHealthModelHandler(req, res) {
     let pastData = [];
     let userData = [];
     try {
-      userData = await Medication.find({ user: req.user.id })
+      userData = await Medication.find({ userId: req.user.id })
         .sort({ createdAt: -1 })
         .limit(15);
       pastData = await Conversation.find({ user: req.user.id })
