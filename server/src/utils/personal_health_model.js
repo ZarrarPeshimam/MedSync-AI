@@ -35,15 +35,24 @@ const memory = new ConversationSummaryMemory({
 export default async function personalHealthModelHandler(req, res) {
   try {
     const input = req.body?.input || "What is my medical status ?";
+    
+    // Get user data from request body (since auth middleware is removed)
+    const user = req.body?.user || req.body?.localuser;
+    if (!user || !user.id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "User data is required in request body" 
+      });
+    }
 
     //call the past two data from the database
     let pastData = [];
     let userData = [];
     try {
-      userData = await Medication.find({ userId: req.user.id })
+      userData = await Medication.find({ userId: user.id })
         .sort({ createdAt: -1 })
-        .limit(15);
-      pastData = await Conversation.find({ user: req.user.id })
+        .limit(20);
+      pastData = await Conversation.find({ user: user.id })
         .sort({ createdAt: -1 }) // latest first
         .limit(2);
       console.log("Past Data loaded...");
@@ -96,7 +105,7 @@ export default async function personalHealthModelHandler(req, res) {
     const result = await chain.call({ input });
 
     try {
-      await Conversation.create({ summary, input, output: result.text, model: "personal_health_model", user: req.user.id});
+      await Conversation.create({ summary, input, output: result.text, model: "personal_health_model", user: user.id});
     } catch (err) {
       console.error("Error saving conversation:", err);
     }
