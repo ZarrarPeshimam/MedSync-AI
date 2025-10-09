@@ -1,5 +1,10 @@
 import Medication from "../models/medicineModel.js";
+
+import { addMedicineToGoogleCalendar } from "../utils/googleCalendar.js";
+
+
 import startNotificationScheduler from "./notificationController.js";
+
 export const addMedication = async (req, res) => {
   try {
     console.log("Request body:", req.body);
@@ -37,6 +42,9 @@ export const addMedication = async (req, res) => {
       notes
     });
     await sampleMedicine.save();
+
+    // Schedule in Google Calendar
+    await addMedicineToGoogleCalendar(userId, sampleMedicine);
     
     // ✅ Restart notification scheduler with updated medications
     console.log("🔄 Restarting notification scheduler after adding new medicine...");

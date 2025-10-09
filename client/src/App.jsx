@@ -12,6 +12,7 @@ import LandingPage from "./pages/landingPage.jsx";
 import NotificationsPage from "./pages/notifications.jsx"
 import MultiAgentChat from './pages/agents.jsx';
 import HealthProfile from "./pages/HealthProfile";
+import OAuthCallback from "./pages/OAuthCallback";
 
 
 function App() {
@@ -26,16 +27,10 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
          <Route path="/notifications" element={<NotificationsPage />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            
-              <Dashboard />
-       
-          } 
-        />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/health" element={<HealthProfile />} />
       <Route path="/addMedication" element={<MedicationEntryForm />} />
+      <Route path="/oauth2callback" element={<OAuthCallback />} />
     </Routes>
     
     {/* Global notification toasts */}
