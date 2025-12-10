@@ -1,6 +1,13 @@
 import Medication from "../models/medicineModel.js";
 
-// Calculate streak days based on medication adherence
+/**
+ * Calculates streak days based on medication adherence.
+ * Fetches all medications for a user and determines the current streak 
+ * of consecutive days where adherence met the required threshold.
+ * * @param {Object} req - The Express request object containing `localuser` in body.
+ * @param {Object} res - The Express response object used to send back the streak data.
+ * @returns {Promise<Object>} JSON response with success status, streak count, and message.
+ */
 export const calculateStreakDays = async (req, res) => {
   try {
     const { localuser } = req.body;
@@ -42,7 +49,13 @@ export const calculateStreakDays = async (req, res) => {
   }
 };
 
-// Helper function to calculate consecutive adherence days
+/**
+ * Helper function to calculate consecutive adherence days.
+ * Groups adherence records by date and calculates the streak backwards from today.
+ * A day is counted in the streak if adherence is >= 80%.
+ * * @param {Array} medications - Array of medication objects containing adherence history.
+ * @returns {number} The number of consecutive days the user has adhered to their medication.
+ */
 function calculateConsecutiveAdherenceDays(medications) {
   // Get all adherence records from all medications
   const allAdherenceRecords = [];
@@ -134,7 +147,14 @@ function calculateConsecutiveAdherenceDays(medications) {
   return streakDays;
 }
 
-// Get detailed adherence statistics for analytics
+/**
+ * Gets detailed adherence statistics for analytics.
+ * Calculates total days, perfect days, and average adherence percentage 
+ * over a specified period (default 30 days).
+ * * @param {Object} req - The Express request object. `req.body` should contain `localuser` and optionally `days`.
+ * @param {Object} res - The Express response object used to return the stats.
+ * @returns {Promise<Object>} JSON response containing the calculated statistics.
+ */
 export const getAdherenceStats = async (req, res) => {
   try {
     const { localuser, days = 30 } = req.body;
@@ -172,7 +192,13 @@ export const getAdherenceStats = async (req, res) => {
   }
 };
 
-// Helper function to calculate detailed adherence statistics
+/**
+ * Helper function to calculate detailed adherence statistics.
+ * Filters adherence records within the date range and computes metrics.
+ * * @param {Array} medications - Array of medication objects.
+ * @param {number} days - Number of past days to include in the analysis.
+ * @returns {Object} An object containing totalDays, perfectDays, averageAdherence, totalDoses, etc.
+ */
 function calculateAdherenceStats(medications, days) {
   const endDate = new Date();
   const startDate = new Date();
