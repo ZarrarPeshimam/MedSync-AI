@@ -22,25 +22,23 @@ class TranslationService {
    * @returns {Promise<string>} - Translated text
    */
   async translateText(text, targetLang = DEFAULT_LANGUAGE, context = 'medical') {
-    if (targetLang === DEFAULT_LANGUAGE) {
-      return { success: true, translatedText: text, originalText: text };
-    }
-
-    const cacheKey = this.getCacheKey(text, targetLang, context);
-    const cached = this.getCachedTranslation(cacheKey);
-    
-    if (cached) {
-      return { success: true, translatedText: cached, originalText: text };
-    }
-
+    // Always return an object with success, translatedText, and originalText
     try {
+      if (targetLang === DEFAULT_LANGUAGE) {
+        return { success: true, translatedText: text, originalText: text };
+      }
+
+      const cacheKey = this.getCacheKey(text, targetLang, context);
+      const cached = this.getCachedTranslation(cacheKey);
+      if (cached) {
+        return { success: true, translatedText: cached, originalText: text };
+      }
+
       let translated = await this.callTranslationAPI(text, DEFAULT_LANGUAGE, targetLang, context);
-      // Store in cache
       cache.set(cacheKey, translated);
       return { success: true, translatedText: translated, originalText: text };
     } catch (error) {
       console.error(`Translation error for "${text}" to ${targetLang}:`, error.message);
-      // Fallback to original text if translation fails
       return { success: false, translatedText: text, originalText: text, error: error.message };
     }
   }
