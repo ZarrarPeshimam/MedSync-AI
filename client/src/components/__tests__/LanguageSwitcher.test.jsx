@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { LanguageSwitcher } from '../../LanguageSwitcher';
+import { LanguageSwitcher } from '../LanguageSwitcher.jsx';
 import { LanguageProvider } from '../../../context/languageContext';
 
 // Mock axios
