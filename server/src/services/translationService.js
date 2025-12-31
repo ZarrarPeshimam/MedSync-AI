@@ -57,6 +57,12 @@ class TranslationService {
       return [];
     }
 
+    // Filter out falsy values (null, undefined, empty string)
+    const filteredTexts = texts.filter(Boolean);
+    if (filteredTexts.length === 0) {
+      return [];
+    }
+
     // If targetLang is an array, translate each text to its corresponding language
     if (Array.isArray(targetLang)) {
       const results = [];
