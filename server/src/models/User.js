@@ -8,13 +8,33 @@ const userSchema = new mongoose.Schema({
     type: Object,  // stores access_token, refresh_token, expiry_date, etc.
     default: null,
   },
-  lastCalendarSync: { 
-    type: Date, 
-    default: null 
+  lastCalendarSync: {
+    type: Date,
+    default: null
   },
-  calendarSyncEnabled: { 
-    type: Boolean, 
-    default: false 
+  calendarSyncEnabled: {
+    type: Boolean,
+    default: false
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  otpCode: {
+    type: String,
+    default: null
+  },
+  otpExpiresAt: {
+    type: Date,
+    default: null
+  },
+  otpRetryCount: {
+    type: Number,
+    default: 0
+  },
+  backupCodes: {
+    type: [String],
+    default: []
   }
 }, { timestamps: true });
 
