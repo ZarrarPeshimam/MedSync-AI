@@ -26,9 +26,13 @@ const userSchema = new mongoose.Schema({
     type: Object,  // stores access_token, refresh_token, expiry_date, etc.
     default: null,
   },
-  lastCalendarSync: {
-    type: Date,
-    default: null
+  timeZone: {
+    type: String,
+    default: "UTC"  // User's timezone for calendar events
+  },
+  lastCalendarSync: { 
+    type: Date, 
+    default: null 
   },
   calendarSyncEnabled: {
     type: Boolean,
