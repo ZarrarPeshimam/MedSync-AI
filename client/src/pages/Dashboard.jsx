@@ -439,7 +439,6 @@ export default function Dashboard() {
                         <Button
                           onClick={() => handleStatusToggle(med._id)}
                           isLoading={processingMeds[med._id]}
-                          disabled={processingMeds[med._id]}
                           variant="primary"
                           className="px-4 py-2 text-sm shadow-lg"
                         >
