@@ -587,7 +587,7 @@ export default function Dashboard() {
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0 mt-0.5">
                 {syncToast.type === 'loading' && (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-400 border-t-transparent"></div>
+                  <Loader size="sm" color="blue" />
                 )}
                 {syncToast.type === 'success' && (
                   <CheckCircle className="w-5 h-5 text-emerald-400" />
