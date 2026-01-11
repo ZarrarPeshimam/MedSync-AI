@@ -4,7 +4,9 @@ import {
   CheckCircle, XCircle, BarChart3, PieChart, Activity, Target,
   Award, Zap, ChevronDown, Filter, Download, Info, ArrowUp, ArrowDown, ArrowLeft
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { 
+  LineChart, Line, BarChart as ReBarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
 export default function Analytics() {
@@ -20,7 +22,7 @@ export default function Analytics() {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
-        uid = JSON.parse(storedUser).id;
+        uid = JSON.parse(storedUser)?.id;
       } catch (err) {
         console.error("Failed to parse stored user", err);
       }
@@ -78,10 +80,10 @@ export default function Analytics() {
 
   const barData = Object.entries(data.byDay || {}).map(([date, counts]) => ({
     date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    taken: counts.taken || 0,
-    missed: counts.missed || 0,
-    delayed: counts.delayed || 0,
-    pending: counts.pending || 0
+    taken: counts?.taken || 0,
+    missed: counts?.missed || 0,
+    delayed: counts?.delayed || 0,
+    pending: counts?.pending || 0
   }));
 
   const StatCard = ({ title, value, subtitle, icon: Icon, trend, color = 'orange' }) => {
@@ -117,20 +119,18 @@ export default function Analytics() {
   };
 
   const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-slate-800/95 backdrop-blur-xl border border-slate-700 rounded-xl p-3 shadow-xl">
-          <p className="text-white font-semibold mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
-              {entry.name}: {entry.value}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-800/95 ...">
+        <p>{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} style={{ color: entry.color }}>{entry.name}: {entry.value}</p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
   const insights = [];
   
@@ -341,7 +341,7 @@ export default function Analytics() {
             <Activity className="w-6 h-6 text-cyan-400" />
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
+            <ReBarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
               <XAxis 
                 dataKey="date" 
@@ -358,7 +358,7 @@ export default function Analytics() {
               <Bar dataKey="missed" fill="#f87171" radius={[6, 6, 0, 0]} minPointSize={5} />
               <Bar dataKey="delayed" fill="#fbbf24" radius={[6, 6, 0, 0]} minPointSize={5} />
               <Bar dataKey="pending" fill="#60a5fa" radius={[6, 6, 0, 0]} minPointSize={5} />
-            </BarChart>
+            </ReBarChart>
           </ResponsiveContainer>
         </div>
       </div>
@@ -456,11 +456,13 @@ export default function Analytics() {
                 insight.type === 'warning' ? 'bg-amber-500/20' :
                 'bg-cyan-500/20'
               }`}>
-                <insight.icon className={`w-5 h-5 ${
+
+                {React.createElement(insight.icon, { className: `w-5 h-5 ${
                   insight.type === 'success' ? 'text-emerald-400' :
                   insight.type === 'warning' ? 'text-amber-400' :
                   'text-cyan-400'
-                }`} />
+                }` })}
+
               </div>
               <h4 className="font-bold text-white mb-2">{insight.title}</h4>
               <p className="text-sm text-slate-300 mb-3 font-medium">{insight.description}</p>
