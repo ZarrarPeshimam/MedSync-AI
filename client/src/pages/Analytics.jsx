@@ -9,6 +9,56 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
+// Move StatCard outside component to prevent recreation on every render
+const StatCard = ({ title, value, subtitle, icon: Icon, trend, color = 'orange' }) => {
+  const colorMap = {
+    orange: 'from-orange-500/30 to-rose-500/30 border-orange-400/40 text-orange-400',
+    green: 'from-emerald-500/30 to-green-500/30 border-emerald-400/40 text-emerald-400',
+    blue: 'from-cyan-500/30 to-blue-500/30 border-cyan-400/40 text-cyan-400',
+    purple: 'from-purple-500/30 to-violet-500/30 border-purple-400/40 text-purple-400',
+    red: 'from-red-500/30 to-rose-500/30 border-red-400/40 text-red-400',
+    amber: 'from-amber-500/30 to-orange-500/30 border-amber-400/40 text-amber-400'
+  };
+
+  return (
+    <div className="bg-slate-900/70 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 hover:border-opacity-70 transition-all">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`w-12 h-12 bg-gradient-to-br ${colorMap[color]} rounded-xl flex items-center justify-center`}>
+          <Icon className="w-6 h-6" />
+        </div>
+        {trend && (
+          <div className={`flex items-center space-x-1 px-2 py-1 rounded-lg ${trend.isPositive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+            {trend.isPositive ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+            <span className="text-xs font-bold">{Math.abs(trend.change)}%</span>
+          </div>
+        )}
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-3xl font-bold text-white">{value}</h3>
+        <p className="text-slate-300 text-sm font-semibold">{title}</p>
+        {subtitle && <p className="text-xs text-slate-400 font-medium">{subtitle}</p>}
+      </div>
+    </div>
+  );
+};
+
+// Move CustomTooltip outside component and fix CSS
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-800/95 px-3 py-2 rounded-md border border-slate-700 shadow-lg text-xs text-slate-100 space-y-1">
+        <p className="font-semibold">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} style={{ color: entry.color }}>
+            {entry.name}: {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function Analytics() {
   const navigate = useNavigate();
   const [dateRange, setDateRange] = useState('30days');
@@ -86,55 +136,10 @@ export default function Analytics() {
     pending: counts?.pending || 0
   }));
 
-  const StatCard = ({ title, value, subtitle, icon: Icon, trend, color = 'orange' }) => {
-    const colorMap = {
-      orange: 'from-orange-500/30 to-rose-500/30 border-orange-400/40 text-orange-400',
-      green: 'from-emerald-500/30 to-green-500/30 border-emerald-400/40 text-emerald-400',
-      blue: 'from-cyan-500/30 to-blue-500/30 border-cyan-400/40 text-cyan-400',
-      purple: 'from-purple-500/30 to-violet-500/30 border-purple-400/40 text-purple-400',
-      red: 'from-red-500/30 to-rose-500/30 border-red-400/40 text-red-400',
-      amber: 'from-amber-500/30 to-orange-500/30 border-amber-400/40 text-amber-400'
-    };
-
-    return (
-      <div className="bg-slate-900/70 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 hover:border-opacity-70 transition-all">
-        <div className="flex items-start justify-between mb-4">
-          <div className={`w-12 h-12 bg-gradient-to-br ${colorMap[color]} rounded-xl flex items-center justify-center`}>
-            <Icon className="w-6 h-6" />
-          </div>
-          {trend && (
-            <div className={`flex items-center space-x-1 px-2 py-1 rounded-lg ${trend.isPositive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-              {trend.isPositive ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-              <span className="text-xs font-bold">{Math.abs(trend.change)}%</span>
-            </div>
-          )}
-        </div>
-        <div className="space-y-1">
-          <h3 className="text-3xl font-bold text-white">{value}</h3>
-          <p className="text-slate-300 text-sm font-semibold">{title}</p>
-          {subtitle && <p className="text-xs text-slate-400 font-medium">{subtitle}</p>}
-        </div>
-      </div>
-    );
-  };
-
-  const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-800/95 ...">
-        <p>{label}</p>
-        {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color }}>{entry.name}: {entry.value}</p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
+  // Enhanced insights logic with better feedback for all adherence levels
   const insights = [];
   
-  if (data.taken > 0) {
+  if (data.taken > 0 && totalDoses > 0) {
     const takenPercentage = ((data.taken / totalDoses) * 100).toFixed(0);
     if (takenPercentage >= 90) {
       insights.push({
@@ -143,6 +148,30 @@ export default function Analytics() {
         title: 'Excellent Adherence!',
         description: `You've taken ${takenPercentage}% of your medications. Outstanding commitment to your health!`,
         action: 'Keep it up'
+      });
+    } else if (takenPercentage >= 70) {
+      insights.push({
+        type: 'success',
+        icon: Target,
+        title: 'Good Progress!',
+        description: `You've taken ${takenPercentage}% of your medications. You're doing well - keep building this habit!`,
+        action: 'Improve consistency'
+      });
+    } else if (takenPercentage >= 50) {
+      insights.push({
+        type: 'info',
+        icon: Activity,
+        title: 'Room for Improvement',
+        description: `You've taken ${takenPercentage}% of your medications. Setting reminders can help you stay on track.`,
+        action: 'Set reminders'
+      });
+    } else {
+      insights.push({
+        type: 'warning',
+        icon: AlertCircle,
+        title: 'Needs Attention',
+        description: `You've taken ${takenPercentage}% of your medications. Let's work on improving your adherence.`,
+        action: 'Create schedule'
       });
     }
   }
@@ -456,13 +485,11 @@ export default function Analytics() {
                 insight.type === 'warning' ? 'bg-amber-500/20' :
                 'bg-cyan-500/20'
               }`}>
-
                 {React.createElement(insight.icon, { className: `w-5 h-5 ${
                   insight.type === 'success' ? 'text-emerald-400' :
                   insight.type === 'warning' ? 'text-amber-400' :
                   'text-cyan-400'
                 }` })}
-
               </div>
               <h4 className="font-bold text-white mb-2">{insight.title}</h4>
               <p className="text-sm text-slate-300 mb-3 font-medium">{insight.description}</p>
